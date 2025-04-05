@@ -5,18 +5,24 @@
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
 
+using ThchYoutubeMusicExtension.Util;
+
 namespace ThchYoutubeMusicExtension;
 
 public partial class ThchYoutubeMusicExtensionCommandsProvider : CommandProvider
 {
     private readonly ICommandItem[] _commands;
+    private readonly SettingsManager _settingsManager = new();
+
 
     public ThchYoutubeMusicExtensionCommandsProvider()
     {
         DisplayName = "th-ch/youtube-music";
-        Icon = IconHelpers.FromRelativePath("Assets\\StoreLogo.png");
+        Icon = IconHelpers.FromRelativePath("Assets\\youtube-music.png");
+        Settings = _settingsManager.Settings;
+
         _commands = [
-            new CommandItem(new ThchYoutubeMusicExtensionPage()) { Title = DisplayName },
+            new CommandItem(new ThchYoutubeMusicExtensionPage(_settingsManager)) { Title = DisplayName },
         ];
     }
 
