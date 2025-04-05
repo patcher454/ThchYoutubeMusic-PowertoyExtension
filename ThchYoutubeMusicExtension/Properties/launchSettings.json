@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "ThchYoutubeMusicExtension (Package)": {
+      "commandName": "MsixPackage",
+      "doNotLaunchApp": true
+    },
+    "ThchYoutubeMusicExtension (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
