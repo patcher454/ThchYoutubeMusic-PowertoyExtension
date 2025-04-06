@@ -40,7 +40,16 @@ namespace ThchYoutubeMusicExtension.Util
             Properties.Resource.plugin_show_history,
             _choices);
 
+        private readonly TextSetting _apiServer = new(
+            Namespaced(nameof(ApiServerAddress)),
+            Properties.Resource.api_server_address,
+            Properties.Resource.api_server_address,
+            "http://127.0.0.1:26538/");
+
         public string ShowHistory => _showHistory.Value ?? string.Empty;
+
+        public string ApiServerAddress => _apiServer.Value ?? "http://127.0.0.1:26538/";
+
 
         internal static string SettingsJsonPath()
         {
@@ -134,14 +143,14 @@ namespace ThchYoutubeMusicExtension.Util
                 {
                     try 
                     {
-                        // historyItem이 null인지 확인
+                        // Check if historyItem is null
                         if (historyItem == null)
                         {
                             ExtensionHost.LogMessage(new LogMessage() { Message = "Null history item found, skipping." });
                             continue;
                         }
                         
-                        // 필수 필드가 null인지 확인
+                        // Check if required fields are null
                         if (historyItem.AccessibilityData == null || 
                             historyItem.Title == null ||
                             historyItem.ThumbnailUrl == null || 
@@ -159,16 +168,20 @@ namespace ThchYoutubeMusicExtension.Util
                             AccessibilityData = historyItem.AccessibilityData
                         };
                         
-                        listItems.Add(new ListItem(new SearchCommand(searchResult, this))
+                        listItems.Add(new ListItem(new InsertCommand(searchResult, this, QueueInsertPosition.INSERT_AFTER_CURRENT_VIDEO))
                         {
                             Icon = new IconInfo(historyItem.ThumbnailUrl),
                             Title = historyItem.Title,
-                            Tags = historyItem.AccessibilityData.Split("•").Select(s => new Tag(s.Trim())).ToArray()
+                            Tags = historyItem.AccessibilityData.Split("•").Select(s => new Tag(s.Trim())).ToArray(),
+                            MoreCommands = 
+                            [
+                                new CommandContextItem(new InsertCommand(searchResult, this, QueueInsertPosition.INSERT_AT_END))
+                            ]
+                            
                         });
                     }
                     catch (Exception ex)
                     {
-                        // 개별 항목 처리 중 오류가 발생해도 전체 목록을 계속 처리
                         ExtensionHost.LogMessage(new LogMessage() { Message = $"Error processing history item: {ex}" });
                     }
                 }
@@ -189,6 +202,7 @@ namespace ThchYoutubeMusicExtension.Util
             _historyPath = HistoryStateJsonPath();
 
             Settings.Add(_showHistory);
+            Settings.Add(_apiServer);
 
             // Load settings from file upon initialization
             LoadSettings();

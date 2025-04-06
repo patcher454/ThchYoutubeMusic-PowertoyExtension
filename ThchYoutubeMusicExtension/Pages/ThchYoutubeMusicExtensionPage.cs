@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 
 using ThchYoutubeMusicExtension.Commands;
 using ThchYoutubeMusicExtension.Util;
@@ -28,8 +29,8 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
         Icon = IconHelpers.FromRelativePath("Assets\\youtube-music.png");
         Title = "th-ch/youtube-music";
         Name = "Open";
-        _apiClient = YoutubeMusicApiClient.Initialize("http://127.0.0.1:26538/");
         _settingsManager = settingsManager;
+        _apiClient = YoutubeMusicApiClient.Initialize(_settingsManager.ApiServerAddress);
         _historyItems = _settingsManager.LoadHistory();
         _allItems = _settingsManager.LoadHistory();
     }
@@ -37,6 +38,11 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
     public List<ListItem> Query(string query)
     {
         ArgumentNullException.ThrowIfNull(query);
+        return Task.Run(() => QueryAsync(query).ConfigureAwait(false).GetAwaiter().GetResult()).Result;
+    }
+
+    private async Task<List<ListItem>> QueryAsync(string query)
+    {
         IEnumerable<ListItem>? filteredHistoryItems = null;
 
         _historyItems = _settingsManager.LoadHistory();
@@ -53,20 +59,23 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
             }
         }
 
-
         var results = new List<ListItem>();
 
         if (!string.IsNullOrEmpty(query))
         {
-            var searchResult = _apiClient.Search(query);
+            var searchResult = await _apiClient.Search(query);
 
             if (searchResult != null)
             {
-                var result = new ListItem(new SearchCommand(searchResult, _settingsManager))
+                var result = new ListItem(new InsertCommand(searchResult, _settingsManager, QueueInsertPosition.INSERT_AFTER_CURRENT_VIDEO))
                 {
                     Icon = new IconInfo(searchResult.ThumbnailUrl),
                     Title = searchResult.Title,
-                    Tags = searchResult.AccessibilityData.Split("•").Select(s => new Tag(s.Trim())).ToArray()
+                    Tags = searchResult.AccessibilityData.Split("•").Select(s => new Tag(s.Trim())).ToArray(),
+                    MoreCommands = 
+                    [
+                        new CommandContextItem(new InsertCommand(searchResult, _settingsManager, QueueInsertPosition.INSERT_AT_END))
+                    ]
                 };
                 results.Add(result);
             }
@@ -76,7 +85,6 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
         {
             results.AddRange(filteredHistoryItems);
         }
-
         return results;
     }
 

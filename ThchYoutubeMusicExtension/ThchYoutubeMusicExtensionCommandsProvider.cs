@@ -22,7 +22,14 @@ public partial class ThchYoutubeMusicExtensionCommandsProvider : CommandProvider
         Settings = _settingsManager.Settings;
 
         _commands = [
-            new CommandItem(new ThchYoutubeMusicExtensionPage(_settingsManager)) { Title = DisplayName },
+            new CommandItem(new ThchYoutubeMusicExtensionPage(_settingsManager))
+            {
+                Title = DisplayName,
+                MoreCommands =
+                [
+                    new CommandContextItem(Settings.SettingsPage)
+                ]
+            },
         ];
     }
 
