@@ -2,6 +2,10 @@
 
 A Microsoft PowerToys extension that integrates with the [th-ch/youtube-music](https://github.com/th-ch/youtube-music) desktop client. This extension allows you to search for songs, Add songs to the queue from PowerToys Run.
 
+
+![image](https://github.com/user-attachments/assets/bffac0db-2688-4f2c-a20e-a80bea0df874)
+
+
 ## Features
 
 - Search for songs directly from PowerToys Run
