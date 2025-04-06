@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using RestSharp;
 using RestSharp.Authenticators;
 using RestSharp.Serializers.NewtonsoftJson;
+using System.Text.Json.Nodes;
 
 namespace ThchYoutubeMusicExtension
 {
@@ -19,7 +20,7 @@ namespace ThchYoutubeMusicExtension
 
         private readonly RestClient _restClient;
         private string? _accessToken;
-        
+
         private static YoutubeMusicApiClient? _instance;
         private static string _baseUrl;
         private static readonly object _lock = new object();
@@ -78,9 +79,12 @@ namespace ThchYoutubeMusicExtension
             _baseUrl = baseUrl.TrimEnd('/');
             _restClient = new RestClient(
                 _baseUrl,
-                configureSerialization: s => s.UseNewtonsoftJson()
+                configureSerialization: s => s.UseNewtonsoftJson(new JsonSerializerSettings()
+                {
+                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
+                })
             );
-            
+
             if (!string.IsNullOrEmpty(accessToken))
             {
                 SetAccessToken(accessToken);
@@ -94,7 +98,7 @@ namespace ThchYoutubeMusicExtension
         public void SetAccessToken(string accessToken)
         {
             _accessToken = accessToken;
-            _restClient.AddDefaultHeader("Authorization", accessToken);
+            _restClient.AddDefaultHeader("Authorization",$"Bearer {accessToken}");
         }
 
         /// <summary>
@@ -105,14 +109,16 @@ namespace ThchYoutubeMusicExtension
         public async Task<bool> AuthenticateAsync()
         {
             var request = new RestRequest($"/auth/{APP_NAME}", Method.Post);
-            var response = await _restClient.ExecuteAsync<AuthResponse>(request);
-            
-            if (response.IsSuccessful && response.Data != null)
+            var response = await _restClient.ExecuteAsync(request);
+
+            if (response.IsSuccessStatusCode && response.Content != null)
             {
-                SetAccessToken(response.Data.AccessToken);
+                SetAccessToken(
+                    JsonObject.Parse(response.Content)["accessToken"].GetValue<string>()
+                );
                 return true;
             }
-            
+
             return false;
         }
 
@@ -180,7 +186,7 @@ namespace ThchYoutubeMusicExtension
         /// <param name="seconds">Time to seek to (seconds)</param>
         public async Task SeekToAsync(double seconds)
         {
-            var request = new { Seconds = seconds };
+            var request = new { seconds = seconds };
             await SendRequestAsync(Method.Post, "/api/v1/seek-to", request);
         }
 
@@ -190,7 +196,7 @@ namespace ThchYoutubeMusicExtension
         /// <param name="seconds">Time to go backward (seconds)</param>
         public async Task GoBackAsync(double seconds)
         {
-            var request = new { Seconds = seconds };
+            var request = new { seconds = seconds };
             await SendRequestAsync(Method.Post, "/api/v1/go-back", request);
         }
 
@@ -200,7 +206,7 @@ namespace ThchYoutubeMusicExtension
         /// <param name="seconds">Time to go forward (seconds)</param>
         public async Task GoForwardAsync(double seconds)
         {
-            var request = new { Seconds = seconds };
+            var request = new { seconds = seconds };
             await SendRequestAsync(Method.Post, "/api/v1/go-forward", request);
         }
 
@@ -235,7 +241,7 @@ namespace ThchYoutubeMusicExtension
             var response = await SendRequestAsync<RepeatModeResponse>(Method.Get, "/api/v1/repeat-mode");
             if (response?.Mode == null)
                 return null;
-            
+
             return Enum.Parse<RepeatMode>(response.Mode);
         }
 
@@ -340,10 +346,10 @@ namespace ThchYoutubeMusicExtension
         /// <param name="insertPosition">Insert position</param>
         public async Task AddToQueueAsync(string videoId, QueueInsertPosition insertPosition = QueueInsertPosition.INSERT_AT_END)
         {
-            var request = new 
-            { 
-                VideoId = videoId,
-                InsertPosition = insertPosition.ToString()
+            var request = new
+            {
+                videoId = videoId,
+                insertPosition = insertPosition.ToString()
             };
             await SendRequestAsync(Method.Post, "/api/v1/queue", request);
         }
@@ -354,7 +360,7 @@ namespace ThchYoutubeMusicExtension
         /// <param name="index">Index to set</param>
         public async Task SetQueueIndexAsync(int index)
         {
-            var request = new { Index = index };
+            var request = new { index = index };
             await SendRequestAsync(Method.Patch, "/api/v1/queue", request);
         }
 
@@ -373,7 +379,7 @@ namespace ThchYoutubeMusicExtension
         /// <param name="toIndex">Position to move to</param>
         public async Task MoveSongInQueueAsync(int fromIndex, int toIndex)
         {
-            var request = new { ToIndex = toIndex };
+            var request = new { toIndex = toIndex };
             await SendRequestAsync(Method.Patch, $"/api/v1/queue/{fromIndex}", request);
         }
 
@@ -397,13 +403,13 @@ namespace ThchYoutubeMusicExtension
         /// <returns>Search result</returns>
         public async Task<SearchResult?> Search(string query)
         {
-            var request = new { Query = query };
+            var request = new { query = query };
             var result = await SendRequestAsync<JObject>(Method.Post, "/api/v1/search", request);
 
             var songInfo = result["contents"]["tabbedSearchResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["contents"][0]["musicCardShelfRenderer"];
             try
             {
-               return new SearchResult
+                return new SearchResult
                 {
                     ThumbnailUrl = songInfo["thumbnail"]["musicThumbnailRenderer"]["thumbnail"]["thumbnails"][0]["url"].Value<string>(),
                     Title = songInfo["title"]["runs"][0]["text"].Value<string>(),
@@ -441,17 +447,17 @@ namespace ThchYoutubeMusicExtension
             }
 
             var request = new RestRequest(path, method);
-            
+
             if (content != null)
             {
                 request.AddJsonBody(content);
             }
-            
+
             var response = await _restClient.ExecuteAsync(request);
 
             if (!response.IsSuccessful)
             {
-                if (response.StatusCode == System.Net.HttpStatusCode.NoContent || 
+                if (response.StatusCode == System.Net.HttpStatusCode.NoContent ||
                     response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     return default;
@@ -461,7 +467,7 @@ namespace ThchYoutubeMusicExtension
                 {
                     await AuthenticateAsync();
                     response = await _restClient.ExecuteAsync(request);
-                    
+
                     if (!response.IsSuccessful)
                     {
                         throw new Exception($"API request failed: {response.StatusCode}, {response.ErrorMessage}");
@@ -472,22 +478,22 @@ namespace ThchYoutubeMusicExtension
                     throw new Exception($"API request failed: {response.StatusCode}, {response.ErrorMessage}");
                 }
             }
-            
+
             if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
             {
                 return default;
             }
-            
+
             if (!string.IsNullOrEmpty(response.Content))
             {
                 if (typeof(T) == typeof(JObject))
                 {
                     return (T)(object)JObject.Parse(response.Content);
                 }
-                
+
                 return JsonConvert.DeserializeObject<T>(response.Content);
             }
-            
+
             return default;
         }
 
@@ -501,6 +507,8 @@ namespace ThchYoutubeMusicExtension
     /// </summary>
     public class AuthResponse
     {
+        public AuthResponse() { }
+
         [JsonProperty("accessToken")]
         public string AccessToken { get; set; } = string.Empty;
     }
@@ -605,7 +613,7 @@ namespace ThchYoutubeMusicExtension
 
         public string VideoId { get; set; } = string.Empty;
 
-        public string AccessibilityData {  get; set; } = string.Empty;
+        public string AccessibilityData { get; set; } = string.Empty;
 
     }
 
