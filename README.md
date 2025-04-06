@@ -1,25 +1,12 @@
 # ThchYoutubeMusic PowerToys Extension
 
-A Microsoft PowerToys extension that integrates with the [th-ch/youtube-music](https://github.com/th-ch/youtube-music) desktop client. This extension allows you to search for songs, control playback, and manage your queue directly from PowerToys Run.
+A Microsoft PowerToys extension that integrates with the [th-ch/youtube-music](https://github.com/th-ch/youtube-music) desktop client. This extension allows you to search for songs, Add songs to the queue from PowerToys Run.
 
 ## Features
 
 - Search for songs directly from PowerToys Run
 - Add songs to the queue (after current or at the end)
 - Search history management
-- Playback controls:
-  - Play/Pause toggle
-  - Next/Previous track
-  - Like/Dislike
-  - Seek forward/backward
-  - Volume control
-  - Shuffle and repeat mode control
-- Queue management:
-  - View current queue
-  - Add songs to queue
-  - Remove songs from queue
-  - Reorder queue items
-  - Set queue index
 
 ## Prerequisites
 
@@ -38,10 +25,8 @@ A Microsoft PowerToys extension that integrates with the [th-ch/youtube-music](h
 
 ## Usage
 
-1. Launch PowerToys Run (default: Alt+Space)
-2. Type "ytm" followed by your search query
-3. Select a song from the results to play it or add it to your queue
-4. Use the context menu (right-click) for additional options
+1. Launch PowerToys CmdPal (default: Win+Alt+Space)
+2. Select a song from the results to play it or add it to your queue
 
 ## Configuration
 
@@ -49,7 +34,6 @@ The extension provides several configurable settings:
 
 - API Server Address: The address where your th-ch/youtube-music client is running
 - History Settings: Configure how your search history is maintained
-- Other playback and display preferences
 
 ## API Communication
 
