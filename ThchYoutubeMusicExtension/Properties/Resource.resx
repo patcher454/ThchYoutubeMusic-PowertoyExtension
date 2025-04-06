@@ -141,4 +141,13 @@
   <data name="command_item_title" xml:space="preserve">
     <value>th-ch/youtube-music</value>
   </data>
+  <data name="Insert_After_Play" xml:space="preserve">
+    <value>Play now</value>
+  </data>
+  <data name="Insert_End" xml:space="preserve">
+    <value>Add to playlist</value>
+  </data>
+  <data name="api_server_address" xml:space="preserve">
+    <value>th-ch/youtube-music API server address</value>
+  </data>
 </root>

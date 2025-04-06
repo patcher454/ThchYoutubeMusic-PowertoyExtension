@@ -1,26 +1,21 @@
 ﻿using Microsoft.CommandPalette.Extensions.Toolkit;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Resources;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 using ThchYoutubeMusicExtension.Util;
 
 namespace ThchYoutubeMusicExtension.Commands
 {
-    public partial class SearchCommand : InvokableCommand
+
+    public partial class InsertCommand : InvokableCommand
     {
         private readonly SettingsManager _settingsManager;
-
-        private readonly YoutubeMusicApiClient _apiClient;
+        private readonly QueueInsertPosition _insertType;
 
         public SearchResult Arguments { get; set; }
 
-        public SearchCommand(SearchResult arguments, SettingsManager settingsManager)
+        public InsertCommand(SearchResult arguments, SettingsManager settingsManager, QueueInsertPosition insertType)
         {
             if (arguments == null)
             {
@@ -32,39 +27,38 @@ namespace ThchYoutubeMusicExtension.Commands
                 throw new ArgumentNullException(nameof(settingsManager), "SettingsManager cannot be null");
             }
 
-            _apiClient = YoutubeMusicApiClient.Initialize("http://127.0.0.1:26538/");
             Arguments = arguments;
-            
-            // null 체크 추가
-            Icon = new IconInfo(arguments.ThumbnailUrl ?? string.Empty);
-            Name = arguments.Title ?? string.Empty;
-            Id = arguments.VideoId ?? string.Empty;
+            _insertType = insertType;
+
+            Name = _insertType == QueueInsertPosition.INSERT_AFTER_CURRENT_VIDEO
+                ? Properties.Resource.Insert_After_Play
+                : Properties.Resource.Insert_End;
+
             _settingsManager = settingsManager;
         }
 
         public override CommandResult Invoke()
         {
-            // 비동기 작업을 동기적으로 실행
             var task = ExecuteAsync();
             task.Wait();
-            
-            return CommandResult.Dismiss();
+
+            return CommandResult.KeepOpen();
         }
 
         private async Task ExecuteAsync()
         {
-            // 큐에 추가
-            await _apiClient.AddToQueueAsync(Arguments.VideoId, QueueInsertPosition.INSERT_AFTER_CURRENT_VIDEO);
-            
-            // 서버 처리를 위한 지연
-            await Task.Delay(3000);
-            
-            // 다음 트랙으로 이동
-            await _apiClient.NextAsync();
+            var client = YoutubeMusicApiClient.Initialize(_settingsManager.ApiServerAddress);
+            await client.AddToQueueAsync(Arguments.VideoId, _insertType);
+
+            if (_insertType == QueueInsertPosition.INSERT_AFTER_CURRENT_VIDEO)
+            {
+                await Task.Delay(1500);
+                await client.NextAsync();
+            }
 
             if (_settingsManager.ShowHistory != Properties.Resource.history_none)
             {
-                var history = new SearchHistory() 
+                var history = new SearchHistory()
                 {
                     ThumbnailUrl = Arguments.ThumbnailUrl,
                     Title = Arguments.Title,

@@ -11,21 +11,21 @@ using RestSharp.Serializers.NewtonsoftJson;
 namespace ThchYoutubeMusicExtension
 {
     /// <summary>
-    /// YouTube Music API 클라이언트
+    /// YouTube Music API Client
     /// </summary>
     public class YoutubeMusicApiClient
     {
         private readonly string APP_NAME = "Powertoys-Extension";
 
         private readonly RestClient _restClient;
-        private readonly string _baseUrl;
         private string? _accessToken;
         
         private static YoutubeMusicApiClient? _instance;
+        private static string _baseUrl;
         private static readonly object _lock = new object();
 
         /// <summary>
-        /// 싱글톤 인스턴스 접근 속성
+        /// Singleton instance access property
         /// </summary>
         public static YoutubeMusicApiClient Instance
         {
@@ -40,16 +40,16 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// YoutubeMusicApiClient 초기화
+        /// Initialize YoutubeMusicApiClient
         /// </summary>
-        /// <param name="baseUrl">API 서버 기본 URL</param>
-        /// <param name="accessToken">인증 토큰 (선택 사항)</param>
-        /// <returns>초기화된 인스턴스</returns>
+        /// <param name="baseUrl">API server base URL</param>
+        /// <param name="accessToken">Authentication token (optional)</param>
+        /// <returns>Initialized instance</returns>
         public static YoutubeMusicApiClient Initialize(string baseUrl, string? accessToken = null)
         {
             lock (_lock)
             {
-                if (_instance == null)
+                if (_instance == null || _baseUrl != baseUrl)
                 {
                     _instance = new YoutubeMusicApiClient(baseUrl, accessToken);
                 }
@@ -58,7 +58,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 테스트 목적으로 인스턴스 초기화 해제
+        /// Reset instance for testing purposes
         /// </summary>
         public static void Reset()
         {
@@ -69,10 +69,10 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// YouTube Music API 클라이언트 생성자
+        /// YouTube Music API Client constructor
         /// </summary>
-        /// <param name="baseUrl">API 서버 기본 URL</param>
-        /// <param name="accessToken">인증 토큰 (선택 사항)</param>
+        /// <param name="baseUrl">API server base URL</param>
+        /// <param name="accessToken">Authentication token (optional)</param>
         private YoutubeMusicApiClient(string baseUrl, string? accessToken = null)
         {
             _baseUrl = baseUrl.TrimEnd('/');
@@ -88,9 +88,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 액세스 토큰 설정
+        /// Set access token
         /// </summary>
-        /// <param name="accessToken">JWT 액세스 토큰</param>
+        /// <param name="accessToken">JWT access token</param>
         public void SetAccessToken(string accessToken)
         {
             _accessToken = accessToken;
@@ -98,10 +98,10 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 인증 엔드포인트를 통해 인증하고 토큰 받기
+        /// Authenticate through the authentication endpoint and get token
         /// </summary>
-        /// <param name="id">인증 ID</param>
-        /// <returns>인증 성공 여부</returns>
+        /// <param name="id">Authentication ID</param>
+        /// <returns>Authentication success status</returns>
         public async Task<bool> AuthenticateAsync()
         {
             var request = new RestRequest($"/auth/{APP_NAME}", Method.Post);
@@ -119,7 +119,7 @@ namespace ThchYoutubeMusicExtension
         #region Player Controls
 
         /// <summary>
-        /// 이전 곡 재생
+        /// Play previous track
         /// </summary>
         public async Task PreviousAsync()
         {
@@ -127,7 +127,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 다음 곡 재생
+        /// Play next track
         /// </summary>
         public async Task NextAsync()
         {
@@ -135,7 +135,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 재생
+        /// Play
         /// </summary>
         public async Task PlayAsync()
         {
@@ -143,7 +143,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 일시정지
+        /// Pause
         /// </summary>
         public async Task PauseAsync()
         {
@@ -151,7 +151,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 재생/일시정지 토글
+        /// Toggle play/pause
         /// </summary>
         public async Task TogglePlayAsync()
         {
@@ -159,7 +159,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 좋아요 표시
+        /// Like
         /// </summary>
         public async Task LikeAsync()
         {
@@ -167,7 +167,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 싫어요 표시
+        /// Dislike
         /// </summary>
         public async Task DislikeAsync()
         {
@@ -175,9 +175,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 특정 시간으로 이동
+        /// Seek to specific time
         /// </summary>
-        /// <param name="seconds">이동할 시간(초)</param>
+        /// <param name="seconds">Time to seek to (seconds)</param>
         public async Task SeekToAsync(double seconds)
         {
             var request = new { Seconds = seconds };
@@ -185,9 +185,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 뒤로 이동
+        /// Go backward
         /// </summary>
-        /// <param name="seconds">뒤로 이동할 시간(초)</param>
+        /// <param name="seconds">Time to go backward (seconds)</param>
         public async Task GoBackAsync(double seconds)
         {
             var request = new { Seconds = seconds };
@@ -195,9 +195,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 앞으로 이동
+        /// Go forward
         /// </summary>
-        /// <param name="seconds">앞으로 이동할 시간(초)</param>
+        /// <param name="seconds">Time to go forward (seconds)</param>
         public async Task GoForwardAsync(double seconds)
         {
             var request = new { Seconds = seconds };
@@ -209,9 +209,9 @@ namespace ThchYoutubeMusicExtension
         #region Playback Settings
 
         /// <summary>
-        /// 셔플 상태 가져오기
+        /// Get shuffle state
         /// </summary>
-        /// <returns>셔플 상태</returns>
+        /// <returns>Shuffle state</returns>
         public async Task<bool?> GetShuffleAsync()
         {
             var response = await SendRequestAsync<ShuffleResponse>(Method.Get, "/api/v1/shuffle");
@@ -219,7 +219,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 셔플 설정
+        /// Set shuffle
         /// </summary>
         public async Task ShuffleAsync()
         {
@@ -227,9 +227,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 반복 모드 가져오기
+        /// Get repeat mode
         /// </summary>
-        /// <returns>반복 모드</returns>
+        /// <returns>Repeat mode</returns>
         public async Task<RepeatMode?> GetRepeatModeAsync()
         {
             var response = await SendRequestAsync<RepeatModeResponse>(Method.Get, "/api/v1/repeat-mode");
@@ -240,9 +240,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 반복 모드 전환
+        /// Switch repeat mode
         /// </summary>
-        /// <param name="iteration">반복 버튼 클릭 횟수</param>
+        /// <param name="iteration">Number of repeat button clicks</param>
         public async Task SwitchRepeatAsync(int iteration)
         {
             var request = new { Iteration = iteration };
@@ -250,9 +250,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 볼륨 설정
+        /// Set volume
         /// </summary>
-        /// <param name="volume">볼륨 값 (0-100)</param>
+        /// <param name="volume">Volume value (0-100)</param>
         public async Task SetVolumeAsync(int volume)
         {
             var request = new { Volume = volume };
@@ -260,9 +260,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 현재 볼륨 가져오기
+        /// Get current volume
         /// </summary>
-        /// <returns>현재 볼륨 값</returns>
+        /// <returns>Current volume value</returns>
         public async Task<int> GetVolumeAsync()
         {
             var response = await SendRequestAsync<VolumeResponse>(Method.Get, "/api/v1/volume");
@@ -270,9 +270,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 전체 화면 설정
+        /// Set full screen
         /// </summary>
-        /// <param name="state">전체 화면 여부</param>
+        /// <param name="state">Full screen status</param>
         public async Task SetFullscreenAsync(bool state)
         {
             var request = new { State = state };
@@ -280,9 +280,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 전체 화면 상태 가져오기
+        /// Get full screen status
         /// </summary>
-        /// <returns>전체 화면 상태</returns>
+        /// <returns>Full screen status</returns>
         public async Task<bool> GetFullscreenAsync()
         {
             var response = await SendRequestAsync<FullscreenResponse>(Method.Get, "/api/v1/fullscreen");
@@ -290,7 +290,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 음소거 토글
+        /// Toggle mute
         /// </summary>
         public async Task ToggleMuteAsync()
         {
@@ -302,9 +302,9 @@ namespace ThchYoutubeMusicExtension
         #region Song and Queue Information
 
         /// <summary>
-        /// 현재 노래 정보 가져오기
+        /// Get current song information
         /// </summary>
-        /// <returns>노래 정보</returns>
+        /// <returns>Song information</returns>
         public async Task<SongInfo?> GetSongInfoAsync()
         {
             try
@@ -318,9 +318,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 대기열 정보 가져오기
+        /// Get queue information
         /// </summary>
-        /// <returns>대기열 정보</returns>
+        /// <returns>Queue information</returns>
         public async Task<JObject?> GetQueueAsync()
         {
             try
@@ -334,10 +334,10 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 대기열에 노래 추가
+        /// Add song to queue
         /// </summary>
-        /// <param name="videoId">비디오 ID</param>
-        /// <param name="insertPosition">삽입 위치</param>
+        /// <param name="videoId">Video ID</param>
+        /// <param name="insertPosition">Insert position</param>
         public async Task AddToQueueAsync(string videoId, QueueInsertPosition insertPosition = QueueInsertPosition.INSERT_AT_END)
         {
             var request = new 
@@ -349,9 +349,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 대기열 인덱스 설정
+        /// Set queue index
         /// </summary>
-        /// <param name="index">설정할 인덱스</param>
+        /// <param name="index">Index to set</param>
         public async Task SetQueueIndexAsync(int index)
         {
             var request = new { Index = index };
@@ -359,7 +359,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 대기열 비우기
+        /// Clear queue
         /// </summary>
         public async Task ClearQueueAsync()
         {
@@ -367,10 +367,10 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 대기열에서 노래 위치 이동
+        /// Move song in queue
         /// </summary>
-        /// <param name="fromIndex">원래 위치</param>
-        /// <param name="toIndex">이동할 위치</param>
+        /// <param name="fromIndex">Original position</param>
+        /// <param name="toIndex">Position to move to</param>
         public async Task MoveSongInQueueAsync(int fromIndex, int toIndex)
         {
             var request = new { ToIndex = toIndex };
@@ -378,9 +378,9 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 대기열에서 노래 제거
+        /// Remove song from queue
         /// </summary>
-        /// <param name="index">제거할 노래 인덱스</param>
+        /// <param name="index">Song index to remove</param>
         public async Task RemoveSongFromQueueAsync(int index)
         {
             await SendRequestAsync(Method.Delete, $"/api/v1/queue/{index}");
@@ -391,14 +391,14 @@ namespace ThchYoutubeMusicExtension
         #region Search
 
         /// <summary>
-        /// 노래 검색
+        /// Search for song
         /// </summary>
-        /// <param name="query">검색어</param>
-        /// <returns>검색 결과</returns>
-        public SearchResult? Search(string query)
+        /// <param name="query">Search term</param>
+        /// <returns>Search result</returns>
+        public async Task<SearchResult?> Search(string query)
         {
             var request = new { Query = query };
-            var result = SendRequestAsync<JObject>(Method.Post, "/api/v1/search", request).GetAwaiter().GetResult();
+            var result = await SendRequestAsync<JObject>(Method.Post, "/api/v1/search", request);
 
             var songInfo = result["contents"]["tabbedSearchResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["contents"][0]["musicCardShelfRenderer"];
             try
@@ -423,7 +423,7 @@ namespace ThchYoutubeMusicExtension
         #region Private Methods
 
         /// <summary>
-        /// 요청 전송 (응답 없음)
+        /// Send request (no response)
         /// </summary>
         private async Task SendRequestAsync(Method method, string path, object? content = null)
         {
@@ -431,7 +431,7 @@ namespace ThchYoutubeMusicExtension
         }
 
         /// <summary>
-        /// 요청 전송 후 응답 받기
+        /// Send request and get response
         /// </summary>
         private async Task<T?> SendRequestAsync<T>(Method method, string path, object? content = null)
         {
@@ -464,12 +464,12 @@ namespace ThchYoutubeMusicExtension
                     
                     if (!response.IsSuccessful)
                     {
-                        throw new Exception($"API 요청 실패: {response.StatusCode}, {response.ErrorMessage}");
+                        throw new Exception($"API request failed: {response.StatusCode}, {response.ErrorMessage}");
                     }
                 }
                 else
                 {
-                    throw new Exception($"API 요청 실패: {response.StatusCode}, {response.ErrorMessage}");
+                    throw new Exception($"API request failed: {response.StatusCode}, {response.ErrorMessage}");
                 }
             }
             
@@ -497,7 +497,7 @@ namespace ThchYoutubeMusicExtension
     #region Models
 
     /// <summary>
-    /// 인증 응답
+    /// Authentication response
     /// </summary>
     public class AuthResponse
     {
@@ -506,7 +506,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 셔플 상태 응답
+    /// Shuffle state response
     /// </summary>
     public class ShuffleResponse
     {
@@ -515,7 +515,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 반복 모드 응답
+    /// Repeat mode response
     /// </summary>
     public class RepeatModeResponse
     {
@@ -524,7 +524,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 볼륨 응답
+    /// Volume response
     /// </summary>
     public class VolumeResponse
     {
@@ -533,7 +533,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 전체 화면 응답
+    /// Full screen response
     /// </summary>
     public class FullscreenResponse
     {
@@ -542,7 +542,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 노래 정보
+    /// Song information
     /// </summary>
     public class SongInfo
     {
@@ -587,7 +587,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 검색 결과
+    /// Search result
     /// </summary>
     public class SearchResult
     {
@@ -610,7 +610,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 미디어 타입
+    /// Media type
     /// </summary>
     public enum MediaType
     {
@@ -622,7 +622,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 반복 모드
+    /// Repeat mode
     /// </summary>
     public enum RepeatMode
     {
@@ -632,7 +632,7 @@ namespace ThchYoutubeMusicExtension
     }
 
     /// <summary>
-    /// 대기열 삽입 위치
+    /// Queue insert position
     /// </summary>
     public enum QueueInsertPosition
     {
