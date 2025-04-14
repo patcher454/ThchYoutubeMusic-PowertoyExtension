@@ -98,7 +98,7 @@ namespace ThchYoutubeMusicExtension
         public void SetAccessToken(string accessToken)
         {
             _accessToken = accessToken;
-            _restClient.AddDefaultHeader("Authorization",$"Bearer {accessToken}");
+            _restClient.AddDefaultHeader("Authorization", $"Bearer {accessToken}");
         }
 
         /// <summary>
@@ -406,22 +406,37 @@ namespace ThchYoutubeMusicExtension
             var request = new { query = query };
             var result = await SendRequestAsync<JObject>(Method.Post, "/api/v1/search", request);
 
-            var songInfo = result["contents"]["tabbedSearchResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["contents"][0]["musicCardShelfRenderer"];
             try
             {
+                var songInfo = result?["contents"]?["tabbedSearchResultsRenderer"]?["tabs"]?[0]?["tabRenderer"]?["content"]?["sectionListRenderer"]?["contents"]?[0]?["musicCardShelfRenderer"];
+
+                if (songInfo == null)
+                {
+                    return null;
+                }
+
+                string? thumbnailUrl = songInfo?["thumbnail"]?["musicThumbnailRenderer"]?["thumbnail"]?["thumbnails"]?[0]?["url"]?.Value<string>();
+                string? title = songInfo?["title"]?["runs"]?[0]?["text"]?.Value<string>();
+                string? videoId = songInfo?["title"]?["runs"]?[0]?["navigationEndpoint"]?["watchEndpoint"]?["videoId"]?.Value<string>();
+                string? accessibilityData = songInfo?["subtitle"]?["accessibility"]?["accessibilityData"]?["label"]?.Value<string>();
+
+                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(videoId))
+                {
+                    return null;
+                }
+
                 return new SearchResult
                 {
-                    ThumbnailUrl = songInfo["thumbnail"]["musicThumbnailRenderer"]["thumbnail"]["thumbnails"][0]["url"].Value<string>(),
-                    Title = songInfo["title"]["runs"][0]["text"].Value<string>(),
-                    VideoId = songInfo["title"]["runs"][0]["navigationEndpoint"]["watchEndpoint"]["videoId"].Value<string>(),
-                    AccessibilityData = songInfo["subtitle"]["accessibility"]["accessibilityData"]["label"].Value<string>()
+                    ThumbnailUrl = thumbnailUrl ?? string.Empty,
+                    Title = title,
+                    VideoId = videoId,
+                    AccessibilityData = accessibilityData ?? string.Empty
                 };
             }
             catch (Exception)
             {
                 return null;
             }
-
         }
 
         #endregion

@@ -9,7 +9,7 @@ using Microsoft.CommandPalette.Extensions;
 
 namespace ThchYoutubeMusicExtension;
 
-[Guid("3c0e00a6-2bcd-472e-8508-cd94a583fe39")]
+[Guid("a051599e-b58f-4af0-8a1d-6dba5112b91c")]
 public sealed partial class ThchYoutubeMusicExtension : IExtension, IDisposable
 {
     private readonly ManualResetEvent _extensionDisposedEvent;

@@ -47,7 +47,7 @@
         <com:Extension Category="windows.comServer">
           <com:ComServer>
             <com:ExeServer Executable="ThchYoutubeMusicExtension.exe" Arguments="-RegisterProcessAsComServer" DisplayName="th-ch/youtube-music">
-              <com:Class Id="3c0e00a6-2bcd-472e-8508-cd94a583fe39" DisplayName="th-ch/youtube-music" />
+              <com:Class Id="a051599e-b58f-4af0-8a1d-6dba5112b91c" DisplayName="th-ch/youtube-music" />
             </com:ExeServer>
           </com:ComServer>
         </com:Extension>
@@ -60,7 +60,7 @@
             <uap3:Properties>
               <CmdPalProvider>
                 <Activation>
-                  <CreateInstance ClassId="3c0e00a6-2bcd-472e-8508-cd94a583fe39" />
+                  <CreateInstance ClassId="a051599e-b58f-4af0-8a1d-6dba5112b91c" />
                 </Activation>
                 <SupportedInterfaces>
                   <Commands/>

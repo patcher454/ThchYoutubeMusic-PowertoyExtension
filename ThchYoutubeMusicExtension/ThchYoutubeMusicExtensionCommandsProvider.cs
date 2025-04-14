@@ -4,7 +4,6 @@
 
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
-
 using ThchYoutubeMusicExtension.Util;
 
 namespace ThchYoutubeMusicExtension;

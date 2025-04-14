@@ -2,27 +2,27 @@
 // The Microsoft Corporation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 using Microsoft.CommandPalette.Extensions;
 using Microsoft.CommandPalette.Extensions.Toolkit;
-
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using System.Threading.Tasks;
-
-using ThchYoutubeMusicExtension.Commands;
 using ThchYoutubeMusicExtension.Util;
+using ThchYoutubeMusicExtension.Commands;
 
 namespace ThchYoutubeMusicExtension;
 
-internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
+internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage, IDisposable
 {
-
     private List<ListItem> _allItems;
     private List<ListItem> _historyItems;
     private readonly YoutubeMusicApiClient _apiClient;
     private readonly SettingsManager _settingsManager;
+    private CancellationTokenSource? _cancellationTokenSource;
+    private Task<List<ListItem>>? _currentSearchTask;
+    private readonly object _itemsLock = new();
 
     public ThchYoutubeMusicExtensionPage(SettingsManager settingsManager)
     {
@@ -35,20 +35,16 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
         _allItems = _settingsManager.LoadHistory();
     }
 
-    public List<ListItem> Query(string query)
+    private async Task<List<ListItem>> DoSearchAsync(string query, CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(query);
-        return Task.Run(() => QueryAsync(query).ConfigureAwait(false).GetAwaiter().GetResult()).Result;
-    }
+        ct.ThrowIfCancellationRequested();
 
-    private async Task<List<ListItem>> QueryAsync(string query)
-    {
         IEnumerable<ListItem>? filteredHistoryItems = null;
 
         _historyItems = _settingsManager.LoadHistory();
 
         if (_historyItems != null)
-        {   
+        {
             if (string.IsNullOrEmpty(query))
             {
                 filteredHistoryItems = _historyItems;
@@ -63,16 +59,18 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
 
         if (!string.IsNullOrEmpty(query))
         {
+            ct.ThrowIfCancellationRequested();
             var searchResult = await _apiClient.Search(query);
 
             if (searchResult != null)
             {
+                ct.ThrowIfCancellationRequested();
                 var result = new ListItem(new InsertCommand(searchResult, _settingsManager, QueueInsertPosition.INSERT_AFTER_CURRENT_VIDEO))
                 {
                     Icon = new IconInfo(searchResult.ThumbnailUrl),
                     Title = searchResult.Title,
                     Tags = searchResult.AccessibilityData.Split("•").Select(s => new Tag(s.Trim())).ToArray(),
-                    MoreCommands = 
+                    MoreCommands =
                     [
                         new CommandContextItem(new InsertCommand(searchResult, _settingsManager, QueueInsertPosition.INSERT_AT_END))
                     ]
@@ -83,16 +81,71 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage
 
         if (filteredHistoryItems != null)
         {
+            ct.ThrowIfCancellationRequested();
             results.AddRange(filteredHistoryItems);
         }
         return results;
     }
 
-    public override void UpdateSearchText(string oldSearch, string newSearch)
+    private async Task ProcessSearchResultsAsync(Task<List<ListItem>> searchTask, string newSearch)
     {
-        _allItems = [.. Query(newSearch)];
-        RaiseItemsChanged(0);
+        try
+        {
+            List<ListItem> results = await searchTask;
+
+            if (_currentSearchTask == searchTask)
+            {
+                lock (_itemsLock)
+                {
+                    _allItems = results;
+                }
+                RaiseItemsChanged();
+                IsLoading = false;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            IsLoading = false;
+        }
     }
 
-    public override IListItem[] GetItems() => [.. _allItems];
-} 
+    public override void UpdateSearchText(string oldSearch, string newSearch)
+    {
+        if (newSearch == oldSearch)
+        {
+            return;
+        }
+
+        if (_cancellationTokenSource != null)
+        {
+            _cancellationTokenSource.Cancel();
+        }
+
+        _cancellationTokenSource = new CancellationTokenSource();
+        CancellationToken cancellationToken = _cancellationTokenSource.Token;
+
+        IsLoading = true;
+
+        _currentSearchTask = DoSearchAsync(newSearch, cancellationToken);
+
+        _ = ProcessSearchResultsAsync(_currentSearchTask, newSearch);
+    }
+
+    public override IListItem[] GetItems()
+    {
+        lock (_itemsLock)
+        {
+            return [.. _allItems];
+        }
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+}
