@@ -52,7 +52,7 @@ namespace ThchYoutubeMusicExtension.Commands
 
             if (_insertType == QueueInsertPosition.INSERT_AFTER_CURRENT_VIDEO)
             {
-                await Task.Delay(1500);
+                await Task.Delay(2500);
                 await client.NextAsync();
             }
 

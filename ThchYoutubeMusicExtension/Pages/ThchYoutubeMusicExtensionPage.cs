@@ -23,6 +23,7 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage, I
     private CancellationTokenSource? _cancellationTokenSource;
     private Task<List<ListItem>>? _currentSearchTask;
     private readonly object _itemsLock = new();
+    private CancellationTokenSource? _debounceCts;
 
     public ThchYoutubeMusicExtensionPage(SettingsManager settingsManager)
     {
@@ -87,20 +88,60 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage, I
         return results;
     }
 
+    public override async void UpdateSearchText(string oldSearch, string newSearch)
+    {
+        if (newSearch == oldSearch)
+        {
+            return;
+        }
+
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var currentCts = _debounceCts;
+
+        try
+        {
+            await Task.Delay(300, currentCts.Token);
+
+            if (currentCts.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (_cancellationTokenSource != null)
+            {
+                _cancellationTokenSource.Cancel();
+            }
+
+            _cancellationTokenSource = new CancellationTokenSource();
+            CancellationToken searchCancellationToken = _cancellationTokenSource.Token;
+
+            _currentSearchTask = DoSearchAsync(newSearch, searchCancellationToken);
+
+            _ = ProcessSearchResultsAsync(_currentSearchTask, newSearch);
+
+        }
+        catch (TaskCanceledException)
+        {
+        }
+        finally
+        {
+        }
+    }
+
     private async Task ProcessSearchResultsAsync(Task<List<ListItem>> searchTask, string newSearch)
     {
         try
         {
             List<ListItem> results = await searchTask;
 
-            if (_currentSearchTask == searchTask)
+            if (_currentSearchTask == searchTask && searchTask.IsCompletedSuccessfully)
             {
                 lock (_itemsLock)
                 {
                     _allItems = results;
                 }
-                RaiseItemsChanged();
-                IsLoading = false;
+                RaiseItemsChanged(results.Count);
             }
         }
         catch (OperationCanceledException)
@@ -108,30 +149,10 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage, I
         }
         catch (Exception ex)
         {
-            IsLoading = false;
         }
-    }
-
-    public override void UpdateSearchText(string oldSearch, string newSearch)
-    {
-        if (newSearch == oldSearch)
+        finally
         {
-            return;
         }
-
-        if (_cancellationTokenSource != null)
-        {
-            _cancellationTokenSource.Cancel();
-        }
-
-        _cancellationTokenSource = new CancellationTokenSource();
-        CancellationToken cancellationToken = _cancellationTokenSource.Token;
-
-        IsLoading = true;
-
-        _currentSearchTask = DoSearchAsync(newSearch, cancellationToken);
-
-        _ = ProcessSearchResultsAsync(_currentSearchTask, newSearch);
     }
 
     public override IListItem[] GetItems()
