@@ -6,17 +6,18 @@
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap uap3 rescap">
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  IgnorableNamespaces="uap uap3 rescap mp">
 
   <Identity
-    Name="ThchYoutubeMusicExtension"
-    Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
-    Version="1.0.0.0" />
+    Name="patcher454.3524191B5F1BD"
+    Publisher="CN=3B74CFA5-19B2-46FE-B53F-DFDF19824BC0"
+    Version="1.0.2.0" />
   <!-- When you're ready to publish your extension, you'll need to change the
        Publisher= to match your own identity -->
 
   <Properties>
-    <DisplayName>th-ch/youtube-music</DisplayName>
+    <DisplayName>th-ch/music CmdPal Extension</DisplayName>
     <PublisherDisplayName>patcher454</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -35,8 +36,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="th-ch/youtube-music"
-        Description="th-ch/youtube-music"
+        DisplayName="th-ch/music CmdPal Extension"
+        Description="th-ch/music"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">
@@ -77,4 +78,6 @@
     <Capability Name="internetClient" />
     <rescap:Capability Name="runFullTrust" />
   </Capabilities>
+
+  <mp:PhoneIdentity PhoneProductId="f92afad6-81b4-4182-bd07-29f302aa6b42" PhonePublisherId="3B74CFA5-19B2-46FE-B53F-DFDF19824BC0"/>
 </Package>

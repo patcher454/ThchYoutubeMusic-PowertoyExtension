@@ -27,7 +27,7 @@ internal sealed partial class ThchYoutubeMusicExtensionPage : DynamicListPage, I
 
     public ThchYoutubeMusicExtensionPage(SettingsManager settingsManager)
     {
-        Icon = IconHelpers.FromRelativePath("Assets\\youtube-music.png");
+        Icon = IconHelpers.FromRelativePath("Assets\\ThchMusic.png");
         Title = "th-ch/youtube-music";
         Name = "Open";
         _settingsManager = settingsManager;

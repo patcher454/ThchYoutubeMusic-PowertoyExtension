@@ -17,7 +17,7 @@ public partial class ThchYoutubeMusicExtensionCommandsProvider : CommandProvider
     public ThchYoutubeMusicExtensionCommandsProvider()
     {
         DisplayName = "th-ch/youtube-music";
-        Icon = IconHelpers.FromRelativePath("Assets\\youtube-music.png");
+        Icon = IconHelpers.FromRelativePath("Assets\\ThchMusic.png");
         Settings = _settingsManager.Settings;
 
         _commands = [
